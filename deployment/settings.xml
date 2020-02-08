@@ -1,0 +1,19 @@
+    <?xml version="1.0"?>
+    <settings>
+        <localRepository>/home/app/deployments/maven/repository/</localRepository>
+        <mirrors/>
+        <servers/>
+        <profiles>
+            <!-- Configure the JBoss GA Maven repository -->
+            <profile>
+                <id>maven-all-public</id>
+                <repositories/>
+                </repositories>
+                <pluginRepositories/>
+            </profile>
+        </profiles>
+        <activeProfiles>
+            <!-- Optionally, make the repository active by default -->
+            <activeProfile>maven-all-public</activeProfile>
+        </activeProfiles>
+    </settings>

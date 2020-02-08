@@ -29,7 +29,7 @@
       </releaseId>
       <status>STARTED</status>
       <scanner>
-        <status>STOPPED</status>
+        <status>STARTED</status>
       </scanner>
       <configItems>
         <config-item>
