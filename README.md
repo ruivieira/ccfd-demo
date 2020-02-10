@@ -1,3 +1,9 @@
+# CCFD demo
+
+## Description
+
+![diagram](docs/diagram.png)
+
 ## Setup
 
 ### Requirements
@@ -16,6 +22,8 @@ Set the environment variables pointing to the Kafka broker and Seldon's server:
 
 * `BROKER_URL` - Kafka's broker adress
 * `SELDON_URL`  - Seldon's server address
+* `KAFKA_TOPIC` - topic which Camel listen too
+* `SELDON_TOKEN` (optional) - Seldon's authentication token
 
 To build the dependencies and start the KIE server run:
 
@@ -41,7 +49,7 @@ Strimzi is used to provide Apache Kafka on OpenShift. Start by applying the oper
 ```shell
 $ oc apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-cluster-operator-0.16.2.yaml
 $ oc apply -f deployment/ccfd-kafka.yaml
-$ oc expose svc/ccfd-kafka
+$ oc expose svc/ccfd-kafka-brokers
 $ oc wait kafka/ccfd --for=condition=Ready --timeout=300s
 ```
 
@@ -79,16 +87,25 @@ One the image is built we create it on OpenShift with:
 ```shell
 $ oc new-app ccfd-service:1.0-SNAPSHOT \
     -e BROKER_URL=<BROKER_URL> \
-    -e SELDON_URL=<SELDON_URL>
+    -e SELDON_URL=<SELDON_URL> \
+    -e KAFKA_TOPIC=<KAFKA_TOPIC>
 $ oc expose svc/ccfd-demo
 ```
+
+If the Seldon server requires an authentication token, this can be passed to the KIE server by adding the following environment variable:
+
+```shell
+-e SELDON_TOKEN=<SELDON_TOKEN>
+```
+
+
 
 ### Environment variables
 
 * `BROKER_URL` - Kafka's broker adress
 * `SELDON_URL`  - Seldon's server address
-
-
+* `KAFKA_TOPIC` - topic which Camel listen too
+* `SELDON_TOKEN` (optional) - Seldon's authentication token
 
 ## Footnotes
 

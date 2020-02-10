@@ -7,7 +7,7 @@ oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:defau
 
 oc apply -f deployment/ccfd-kafka.yaml
 
-oc expose svc/ccfd-kafka
+oc expose svc/ccfd-kafka-brokers
 
 oc wait kafka/ccfd --for=condition=Ready --timeout=300s
 
@@ -19,8 +19,10 @@ oc new-app ruivieira/jbpm-seldon-test-model
 
 oc expose svc/jbpm-seldon-test-model
 
-oc new-app ruivieira/ccfd-demo \
+# after running build.sh
+oc new-app ccd-service:1.0-SNAPSHOT \
     -e BROKER_URL=ccfd-kafka-brokers:9092 \
-    -e SELDON_URL=http://jbpm-seldon-test-model-default.apps-crc.testing
+    -e SELDON_URL=http://jbpm-seldon-test-model-default.apps-crc.testing \
+    -e KAFKA_TOPIC=ccd
 
-oc expose svc/ccfd-demo
+oc expose svc/ccfd-service

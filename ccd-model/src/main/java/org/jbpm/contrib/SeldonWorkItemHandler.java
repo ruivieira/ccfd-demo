@@ -28,6 +28,7 @@ import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemManager;
 
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,11 +45,23 @@ public class SeldonWorkItemHandler extends AbstractLogOrThrowWorkItemHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(SeldonWorkItemHandler.class);
 
+    private final String SELDON_TOKEN;
+    private final boolean USE_SELDON_TOKEN;
 
     private final String ENDPOINT = "/predict";
 
     public SeldonWorkItemHandler() {
         final String SELDON_URL = System.getenv("SELDON_URL");
+
+        SELDON_TOKEN = System.getenv("SELDON_TOKEN");
+
+        USE_SELDON_TOKEN = SELDON_TOKEN != null;
+
+        if (USE_SELDON_TOKEN) {
+            logger.debug("Using Seldon token " + SELDON_TOKEN);
+        } else {
+            logger.debug("Seldon token not set");
+        }
 
         if (SELDON_URL==null) {
             logger.error("No Seldon URL provided");
@@ -78,9 +91,16 @@ public class SeldonWorkItemHandler extends AbstractLogOrThrowWorkItemHandler {
             final ObjectMapper mapper = new ObjectMapper();
             mapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
             final String JSON = mapper.writeValueAsString(requestObject);
-            final String stringResponse = predict.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(JSON, MediaType.APPLICATION_JSON_TYPE), String.class);
+
+            Invocation.Builder request = predict.request(MediaType.APPLICATION_JSON_TYPE);
+
+            if (USE_SELDON_TOKEN) {
+                request = request.header("Authorization", "Bearer " + SELDON_TOKEN);
+            }
+
+            final String stringResponse = request.post(Entity.entity(JSON, MediaType.APPLICATION_JSON_TYPE), String.class);
             final PredictionResponse response = mapper.readValue(stringResponse, PredictionResponse.class);
-            System.out.println(response.getData().getOutcomes());
+            logger.debug(response.getData().getOutcomes().toString());
 
             logger.debug(stringResponse);
 
