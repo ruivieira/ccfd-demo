@@ -49,7 +49,7 @@ Strimzi is used to provide Apache Kafka on OpenShift. Start by applying the oper
 ```shell
 $ oc apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-cluster-operator-0.16.2.yaml
 $ oc apply -f deployment/ccfd-kafka.yaml
-$ oc expose svc/ccfd-kafka
+$ oc expose svc/ccfd-kafka-brokers
 $ oc wait kafka/ccfd --for=condition=Ready --timeout=300s
 ```
 
