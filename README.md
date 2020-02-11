@@ -86,9 +86,7 @@ One the image is built we create it on OpenShift with:
 
 ```shell
 $ oc new-app ccfd-service:1.0-SNAPSHOT \
-    -e BROKER_URL=<BROKER_URL> \
-    -e SELDON_URL=<SELDON_URL> \
-    -e KAFKA_TOPIC=<KAFKA_TOPIC>
+    -e SELDON_URL=<SELDON_URL>
 $ oc expose svc/ccfd-demo
 ```
 
@@ -96,6 +94,23 @@ If the Seldon server requires an authentication token, this can be passed to the
 
 ```shell
 -e SELDON_TOKEN=<SELDON_TOKEN>
+```
+
+#### Camel router
+
+The Camel router is responsible to trigger REST endpoints according to messages arriving in certain topics. To deploy a router with listens to the topic `KAFKA_TOPIC` from Kafka's broker `BROKER_URL` and starts a process instance on the KIE server at `KIE_SERVER_URL`, first build the [router located here](https://github.com/ruivieira/ccfd-fuse) with
+
+```shell
+$ mvn clean install -P openshift
+```
+
+and then deploy it with
+
+```shell
+$ oc new-app ccd-fuse:1.0-SNAPSHOT \
+    -e BROKER_URL=ccfd-kafka-brokers:9092 \
+    -e KAFKA_TOPIC=ccd \
+    -e KIE_SERVER_URL=ccd-service:8090
 ```
 
 
