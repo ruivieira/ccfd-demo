@@ -63,6 +63,8 @@ $ oc new-app python:3.6~https://github.com/ruivieira/ccfd-kafka-producer \
     -e KAFKA_TOPIC=<TOPIC>
 ```
 
+The Kafka producer creates a message stream with data from a sample of the [Kaggle credit card fraud dataset](https://www.kaggle.com/mlg-ulb/creditcardfraud).
+
 #### Seldon
 
 To deply the Seldon model server, deploy the already built Docker image with
@@ -98,7 +100,9 @@ If the Seldon server requires an authentication token, this can be passed to the
 
 #### Camel router
 
-The Camel router is responsible to trigger REST endpoints according to messages arriving in certain topics. To deploy a router with listens to the topic `KAFKA_TOPIC` from Kafka's broker `BROKER_URL` and starts a process instance on the KIE server at `KIE_SERVER_URL`, first build the [router located here](https://github.com/ruivieira/ccfd-fuse) with
+The Camel router is responsible to trigger REST endpoints according to messages arriving in certain topics. 
+The route is selected depending on the prediction of the Seldon model, whether the transiction is considered fraudulent or not. Depending on the model's prediction a specific business process will be triggered.
+To deploy a router with listens to the topic `KAFKA_TOPIC` from Kafka's broker `BROKER_URL` and starts a process instance on the KIE server at `KIE_SERVER_URL`, first build the [router located here](https://github.com/ruivieira/ccfd-fuse) with
 
 ```shell
 $ mvn clean install -P openshift
@@ -111,9 +115,14 @@ $ oc new-app ccd-fuse:1.0-SNAPSHOT \
     -e BROKER_URL=ccfd-kafka-brokers:9092 \
     -e KAFKA_TOPIC=ccd \
     -e KIE_SERVER_URL=ccd-service:8090
+    -e SELDON_URL=<SELDON_URL>
 ```
 
+Also optionally, a Seldon token can be provided:
 
+```shell
+-e SELDON_TOKEN=<SELDON_TOKEN>
+```
 
 ### Environment variables
 
