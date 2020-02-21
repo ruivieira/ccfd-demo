@@ -40,7 +40,11 @@ To deploy all the components in OpenShift, the simplest way is to login using `o
 $ oc login -u <USER>
 ```
 
-and running the `deploy.sh` script. Below is a list of the components deployed by this script.
+Next you can create a project for this demo, such as
+
+```shell
+$ oc new-project ccfd
+```
 
 #### Kafka
 
@@ -67,16 +71,16 @@ The Kafka producer creates a message stream with data from a sample of the [Kagg
 
 #### Seldon
 
-To deply the Seldon model server, deploy the already built Docker image with
+To deploy the Seldon model server, deploy the already built Docker image with
 
 ```shell
-$ oc new-app ruivieira/jbpm-seldon-test-model
-$ oc expose svc/jbpm-seldon-test-model
+$ oc new-app ruivieira/ccfd-seldon-model
+$ oc expose svc/ccfd-seldon-model
 ```
 
 #### Kie server
 
-To deploy the KIE server, Maven and a JDK need to be available on your local machine. We use `fabric8` to build the images as:
+To deploy the KIE server (this repo), Maven and a JDK need to be available on your local machine. We use `fabric8` to build the images as:
 
 ```shell
 $ mvn -f ccd-model/pom.xml clean install
@@ -84,10 +88,10 @@ $ mvn -f ccd-kjar/pom.xml clean install -P openshift
 $ mvn -f ccd-service/pom.xml clean install -P openshift,h2
 ```
 
-One the image is built we create it on OpenShift with:
+Or simply run `build.sh`. Once the image is built we create it on OpenShift with:
 
 ```shell
-$ oc new-app ccfd-service:1.0-SNAPSHOT \
+$ oc new-app ccd-service:1.0-SNAPSHOT \
     -e SELDON_URL=<SELDON_URL>
 $ oc expose svc/ccfd-demo
 ```
@@ -100,12 +104,13 @@ If the Seldon server requires an authentication token, this can be passed to the
 
 #### Camel router
 
-The Camel router is responsible to trigger REST endpoints according to messages arriving in certain topics. 
-The route is selected depending on the prediction of the Seldon model, whether the transiction is considered fraudulent or not. Depending on the model's prediction a specific business process will be triggered.
+The Camel router is responsible consume messages arriving in specific topics, requesting a prediction to the Seldon model, and then triggering different REST endpoints according to that prediction.
+The route is selected depending on whether a transaction is predicted as fraudulent or not. Depending on the model's prediction a specific business process will be triggered on the KIE server.
 To deploy a router with listens to the topic `KAFKA_TOPIC` from Kafka's broker `BROKER_URL` and starts a process instance on the KIE server at `KIE_SERVER_URL`, first build the [router located here](https://github.com/ruivieira/ccfd-fuse) with
 
 ```shell
-$ mvn clean install -P openshift
+$ git clone https://github.com/ruivieira/ccfd-fuse.git
+$ mvn -f ccfd-fuse/pom.xml clean install -P openshift
 ```
 
 and then deploy it with
