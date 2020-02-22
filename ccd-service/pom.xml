@@ -154,7 +154,11 @@
                                                     </includes>
                                                 </fileSet>
                                                 <fileSet>
-                                                    <directory>../ccd-kjar/target/local-repository/maven</directory>
+                                                    <directory>../ccd-fraud-kjar/target/local-repository/maven</directory>
+                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
+                                                </fileSet>
+                                                <fileSet>
+                                                    <directory>../ccd-standard-kjar/target/local-repository/maven</directory>
                                                     <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
                                                 </fileSet>
                                                 <fileSet>
@@ -232,7 +236,11 @@
                                                     </includes>
                                                 </fileSet>
                                                 <fileSet>
-                                                    <directory>../ccd-kjar/target/local-repository/maven</directory>
+                                                    <directory>../ccd-fraud-kjar/target/local-repository/maven</directory>
+                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
+                                                </fileSet>
+                                                <fileSet>
+                                                    <directory>../ccd-standard-kjar/target/local-repository/maven</directory>
                                                     <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
                                                 </fileSet>
                                             </inline>
