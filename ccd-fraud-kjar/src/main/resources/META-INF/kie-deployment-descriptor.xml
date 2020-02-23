@@ -10,12 +10,6 @@
     <task-event-listeners/>
     <globals/>
     <work-item-handlers>
-        <work-item-handler>
-            <resolver>mvel</resolver>
-            <identifier>new org.jbpm.contrib.SeldonWorkItemHandler()</identifier>
-            <parameters/>
-            <name>Seldon</name>
-        </work-item-handler>
     </work-item-handlers>
     <environment-entries/>
     <configurations/>

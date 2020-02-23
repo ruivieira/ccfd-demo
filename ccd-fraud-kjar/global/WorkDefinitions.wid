@@ -1,21 +1,5 @@
 [
   [
-    "name" : "Seldon",
-    "displayName" : "SeldonDefinitions",
-    "category" : "seldon-workitem",
-    "description" : "",
-    "defaultHandler" : "mvel: new org.jbpm.contrib.SeldonWorkItemHandler()",
-    "documentation" : "seldon-workitem/index.html",
-    "parameters" : [
-                     "accountId" : new IntegerDataType(),
-                     "transactionAmount" : new FloatDataType()
-    ],
-    "results" : [
-        "probability" : new FloatDataType()
-    ],
-    "icon" : "seldonicon.png"
-    ],
-  [
     "name" : "Email",
     "parameters" : [
       "From" : new StringDataType(),
