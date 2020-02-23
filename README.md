@@ -1,8 +1,23 @@
 # CCFD demo
 
-## Description
-
 ![diagram](docs/diagram.png)
+
+# Contents
+
+- [CCFD demo](#ccfd-demo)
+  * [Setup](#setup)
+    + [Requirements](#requirements)
+    + [Running locally](#running-locally)
+    + [Running on OpenShift](#running-on-openshift)
+      - [Kafka](#kafka)
+      - [Kafka producer](#kafka-producer)
+      - [Seldon](#seldon)
+      - [Kie server](#kie-server)
+        * [Nexus](#nexus)
+        * [Building the KJARs](#building-the-kjars)
+      - [Camel router](#camel-router)
+    + [Environment variables](#environment-variables)
+  * [Footnotes](#footnotes)
 
 ## Setup
 
@@ -80,11 +95,31 @@ $ oc expose svc/ccfd-seldon-model
 
 #### Kie server
 
+The business processes to be executed by the KIE server are located in KJARs.
+The first step is to setup a Nexus repository on OpenShift in order to deploy the KJARs. The KIE server will then be able to resolve the needed dependencies at runtime.
+
+##### Nexus
+
+To deploy a Nexus repository on OpenShift, simply run:
+
+```
+$ oc new-app sonatype/nexus
+$ oc expose svc/nexus
+```
+
+##### Building the KJARs
+
+The KJARs are available at the  [ccfd-kjars](https://github.com/ruivieira/ccfd-kjars) git repository. To build them:
+
+```shell
+$ git clone https://github.com/ruivieira/ccfd-kjars.git
+$ cd ccfd-kjars
+$ NEXUS_URL=<NEXUS_URL> mvn clean deploy
+```
+
 To deploy the KIE server (this repo), Maven and a JDK need to be available on your local machine. We use `fabric8` to build the images as:
 
 ```shell
-$ mvn -f ccd-model/pom.xml clean install
-$ mvn -f ccd-kjar/pom.xml clean install -P openshift
 $ mvn -f ccd-service/pom.xml clean install -P openshift,h2
 ```
 
@@ -92,7 +127,8 @@ Or simply run `build.sh`. Once the image is built we create it on OpenShift with
 
 ```shell
 $ oc new-app ccd-service:1.0-SNAPSHOT \
-    -e SELDON_URL=<SELDON_URL>
+    -e SELDON_URL=<SELDON_URL> \
+    -e NEXUS_URL=<NEXUS_URL>
 $ oc expose svc/ccfd-demo
 ```
 
