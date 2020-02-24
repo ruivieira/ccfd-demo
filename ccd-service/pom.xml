@@ -114,21 +114,7 @@
                     <name>docker</name>
                 </property>
             </activation>
-            <repositories>
-                <repository>
-                    <id>nexus-ccfd</id>
-                    <name>nexus-releases</name>
-                    <url>${env.NEXUS_URL}/nexus/content/repositories/snapshots</url>
-                </repository>
-            </repositories>
-            <distributionManagement>
-                <repository>
-                    <id>nexus-ccfd</id>
-                    <name>nexus-releases</name>
-                    <url>${env.NEXUS_URL}/nexus/content/repositories/snapshots</url>
-                    <layout>default</layout>
-                </repository>
-            </distributionManagement>
+
             <build>
                 <plugins>
                     <plugin>
@@ -167,14 +153,14 @@
                                                         <include>settings.xml</include>
                                                     </includes>
                                                 </fileSet>
-<!--                                                <fileSet>-->
-<!--                                                    <directory>../ccd-fraud-kjar/target/local-repository/maven</directory>-->
-<!--                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>-->
-<!--                                                </fileSet>-->
-<!--                                                <fileSet>-->
-<!--                                                    <directory>../ccd-standard-kjar/target/local-repository/maven</directory>-->
-<!--                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>-->
-<!--                                                </fileSet>-->
+                                                <fileSet>
+                                                    <directory>../ccd-fraud-kjar/target/local-repository/maven</directory>
+                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
+                                                </fileSet>
+                                                <fileSet>
+                                                    <directory>../ccd-standard-kjar/target/local-repository/maven</directory>
+                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
+                                                </fileSet>
                                                 <fileSet>
                                                     <directory>../ccd-model/target/local-repository/maven</directory>
                                                     <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
@@ -249,14 +235,14 @@
                                                         <include>settings.xml</include>
                                                     </includes>
                                                 </fileSet>
-<!--                                                <fileSet>-->
-<!--                                                    <directory>../ccd-fraud-kjar/target/local-repository/maven</directory>-->
-<!--                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>-->
-<!--                                                </fileSet>-->
-<!--                                                <fileSet>-->
-<!--                                                    <directory>../ccd-standard-kjar/target/local-repository/maven</directory>-->
-<!--                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>-->
-<!--                                                </fileSet>-->
+                                                <fileSet>
+                                                    <directory>../ccd-fraud-kjar/target/local-repository/maven</directory>
+                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
+                                                </fileSet>
+                                                <fileSet>
+                                                    <directory>../ccd-standard-kjar/target/local-repository/maven</directory>
+                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
+                                                </fileSet>
                                             </inline>
                                             <user>jboss:jboss:jboss</user>
                                         </assembly>
@@ -284,10 +270,6 @@
 
     <repositories>
         <repository>
-            <id>nexus-ccfd</id>
-            <url>${env.NEXUS_URL}/nexus/content/repositories/snapshots</url>
-        </repository>
-        <repository>
             <id>jboss-public-repository-group</id>
             <name>JBoss Public Repository Group</name>
             <url>https://repository.jboss.org/nexus/content/groups/public/</url>
@@ -300,14 +282,4 @@
             </snapshots>
         </repository>
     </repositories>
-
-    <distributionManagement>
-        <repository>
-            <id>nexus-ccfd</id>
-            <name>nexus-ccfd</name>
-            <url>${env.NEXUS_URL}/nexus/content/repositories/snapshots</url>
-            <layout>default</layout>
-        </repository>
-    </distributionManagement>
-
 </project>
