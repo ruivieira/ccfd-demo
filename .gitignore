@@ -16,3 +16,9 @@ ccd-service/.idea/
 ccd-kjar/.project
 
 ccd-kjar/.classpath
+
+.idea/
+
+ccd-fraud-kjar/target/
+
+ccd-standard-kjar/target/

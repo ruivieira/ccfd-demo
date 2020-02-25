@@ -63,13 +63,18 @@ $ oc new-project ccfd
 
 #### Kafka
 
-Strimzi is used to provide Apache Kafka on OpenShift. Start by applying the operator [0] and the cluster deployment with:
+[Strimzi](https://strimzi.io/) is used to provide Apache Kafka on OpenShift. Start by applying the operator [^0] and the cluster deployment with:
 
 ```shell
 $ oc apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-cluster-operator-0.16.2.yaml
 $ oc apply -f deployment/ccfd-kafka.yaml
-$ oc expose svc/ccfd-kafka-brokers
 $ oc wait kafka/ccfd --for=condition=Ready --timeout=300s
+```
+
+Optionally, expose the Kafka service with
+
+```shell
+$ oc expose svc/ccfd-kafka-brokers
 ```
 
 #### Kafka producer
@@ -78,8 +83,8 @@ To start the Kafka producer (which simulates the transaction events) run:
 
 ```shell
 $ oc new-app python:3.6~https://github.com/ruivieira/ccfd-kafka-producer \
-    -e BROKER_URL=<BROKER_URL> \
-    -e KAFKA_TOPIC=<TOPIC>
+    -e BROKER_URL=ccfd-kafka-brokers:9092 \
+    -e KAFKA_TOPIC=ccd
 ```
 
 The Kafka producer creates a message stream with data from a sample of the [Kaggle credit card fraud dataset](https://www.kaggle.com/mlg-ulb/creditcardfraud).
@@ -102,40 +107,48 @@ The first step is to setup a Nexus repository on OpenShift in order to deploy th
 
 To deploy a Nexus repository on OpenShift, simply run:
 
-```
+```shell
 $ oc new-app sonatype/nexus
 $ oc expose svc/nexus
 ```
 
-##### Building the KJARs
+##### Execution server
 
-The KJARs are available at the  [ccfd-kjars](https://github.com/ruivieira/ccfd-kjars) git repository. To build them:
+To deploy the KIE server (this repo), Maven and a JDK need to be available on your local machine. 
+First clone this repository:
 
 ```shell
-$ git clone https://github.com/ruivieira/ccfd-kjars.git
-$ cd ccfd-kjars
-$ NEXUS_URL=<NEXUS_URL> mvn clean deploy
+$ git clone https://github.com/ruivieira/ccfd-demo.git
 ```
 
-To deploy the KIE server (this repo), Maven and a JDK need to be available on your local machine. We use `fabric8` to build the images as:
+Next, we use `fabric8` to build the images as[^1]:
 
 ```shell
+$ cd ccfd-demo
+$ mvn -f ccd-model/pom.xml clean install
+$ mvn -f ccd-standard-kjar/pom.xml clean install -P openshift
+$ mvn -f ccd-fraud-kjar/pom.xml clean install -P openshift
 $ mvn -f ccd-service/pom.xml clean install -P openshift,h2
 ```
 
-Or simply run `build.sh`. Once the image is built we create it on OpenShift with:
+Or simply run `build.sh`. Once the images are built, we deploy them on OpenShift with:
 
 ```shell
 $ oc new-app ccd-service:1.0-SNAPSHOT \
-    -e SELDON_URL=<SELDON_URL> \
-    -e NEXUS_URL=<NEXUS_URL>
-$ oc expose svc/ccfd-demo
+    -e SELDON_URL=ccfd-seldon-model:5000 \
+    -e NEXUS_URL=http://nexus:8081
 ```
 
 If the Seldon server requires an authentication token, this can be passed to the KIE server by adding the following environment variable:
 
 ```shell
 -e SELDON_TOKEN=<SELDON_TOKEN>
+```
+
+If you want to interact with the KIE server's REST interface from outside OpenShift, you can expose its service with
+
+```shell
+$ oc expose svc/ccd-service
 ```
 
 #### Camel router
@@ -155,14 +168,26 @@ and then deploy it with
 $ oc new-app ccd-fuse:1.0-SNAPSHOT \
     -e BROKER_URL=ccfd-kafka-brokers:9092 \
     -e KAFKA_TOPIC=ccd \
-    -e KIE_SERVER_URL=ccd-service:8090
-    -e SELDON_URL=<SELDON_URL>
+    -e KIE_SERVER_URL=http://ccd-service:8090 \
+    -e SELDON_URL=http://ccfd-seldon-model:5000
 ```
 
 Also optionally, a Seldon token can be provided:
 
 ```shell
 -e SELDON_TOKEN=<SELDON_TOKEN>
+```
+
+#### Optional
+
+##### Building the KJARs
+
+The KJARs are available at the  [ccfd-kjars](https://github.com/ruivieira/ccfd-kjars) git repository. To build them:
+
+```shell
+$ git clone https://github.com/ruivieira/ccfd-kjars.git
+$ cd ccfd-kjars
+$ NEXUS_URL=<NEXUS_URL> mvn clean deploy
 ```
 
 ### Environment variables
@@ -174,4 +199,5 @@ Also optionally, a Seldon token can be provided:
 
 ## Footnotes
 
-[0] - In case you need cluster admin privileges to deploy Strimzi, in which case (in a development setup)  you can run `oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:default:strimzi-cluster-operator`.
+[^0]: In case you need cluster admin privileges to deploy Strimzi, in which case (in a development setup)  you can run `oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:default:strimzi-cluster-operator`.
+[^1]: You might need to add the appropriate server to Maven's `settings.xml` as per 
