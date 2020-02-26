@@ -4,7 +4,7 @@
 
 # Contents
 
-- [CCFD demo](#ccfd-demo)
+- [Contents](#contents)
   * [Setup](#setup)
     + [Requirements](#requirements)
     + [Running locally](#running-locally)
@@ -14,8 +14,11 @@
       - [Seldon](#seldon)
       - [Kie server](#kie-server)
         * [Nexus](#nexus)
-        * [Building the KJARs](#building-the-kjars)
+        * [Execution server](#execution-server)
+      - [Notification service](#notification-service)
       - [Camel router](#camel-router)
+      - [Optional](#optional)
+        * [Building the KJARs](#building-the-kjars)
     + [Environment variables](#environment-variables)
   * [Footnotes](#footnotes)
 
@@ -136,7 +139,9 @@ Or simply run `build.sh`. Once the images are built, we deploy them on OpenShift
 ```shell
 $ oc new-app ccd-service:1.0-SNAPSHOT \
     -e SELDON_URL=ccfd-seldon-model:5000 \
-    -e NEXUS_URL=http://nexus:8081
+    -e NEXUS_URL=http://nexus:8081 \
+    -e CUSTOMER_NOTIFICATION_TOPIC=ccd-customer-outgoing \
+    -e BROKER_URL=ccfd-kafka-brokers:9092
 ```
 
 If the Seldon server requires an authentication token, this can be passed to the KIE server by adding the following environment variable:
@@ -149,6 +154,28 @@ If you want to interact with the KIE server's REST interface from outside OpenSh
 
 ```shell
 $ oc expose svc/ccd-service
+```
+
+#### Notification service
+
+The notification service is an event-driven micro-service responsible for relaying notifications to the customer and customer responses. 
+
+If a message is sent to a "customer outgoing" Kafka topic, a notification is sent to the customer asking whether the transaction was legitimate or not. For this demo, the micro-service simulates customer interaction, but different communication methods can be built on top of it (email, SMS, *etc*).
+
+If the customer replies (in both scenarios: they either made the transaction or not), a message is written to a "customer response" topic. The router (described below) subscribes to messages in this topic, and signals the business process with the customer response.
+
+To build the notification service, you can use Maven to build the project and Docker to build the image:
+
+```shell
+$ mvn clean package
+$ docker build -f src/main/docker/Dockerfile.jvm -t ruivieira/ccfd-notification-service:latest .
+```
+
+Once it's build, you can deploy it using
+
+```shell
+$ oc new-app ruivieira/ccfd-notification-service:latest \
+    -e BROKER_URL=ccfd-kafka-brokers:9092
 ```
 
 #### Camel router
@@ -169,7 +196,10 @@ $ oc new-app ccd-fuse:1.0-SNAPSHOT \
     -e BROKER_URL=ccfd-kafka-brokers:9092 \
     -e KAFKA_TOPIC=ccd \
     -e KIE_SERVER_URL=http://ccd-service:8090 \
-    -e SELDON_URL=http://ccfd-seldon-model:5000
+    -e SELDON_URL=http://ccfd-seldon-model:5000 \
+    -e CUSTOMER_NOTIFICATION_TOPIC=ccd-customer-outgoing \
+    -e CUSTOMER_RESPONSE_TOPIC=ccd-customer-response
+
 ```
 
 Also optionally, a Seldon token can be provided:

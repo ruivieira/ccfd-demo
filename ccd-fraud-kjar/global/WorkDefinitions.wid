@@ -1,5 +1,17 @@
 [
   [
+    "name" : "CustomerNotification",
+    "displayName" : "CustomerNotification",
+    "category" : "messaging",
+    "description" : "",
+    "defaultHandler" : "mvel: new org.jbpm.contrib.CustomerNotificationWorkItemHandler()",
+    "parameters" : [
+        "v3" : new FloatDataType()
+    ],
+    "icon" : "defaultemailicon.gif"
+  ],
+
+  [
     "name" : "Email",
     "parameters" : [
       "From" : new StringDataType(),

@@ -10,6 +10,12 @@
     <task-event-listeners/>
     <globals/>
     <work-item-handlers>
+        <work-item-handler>
+            <resolver>mvel</resolver>
+            <identifier>new org.jbpm.contrib.CustomerNotificationWorkItemHandler()</identifier>
+            <parameters/>
+            <name>CustomerNotification</name>
+        </work-item-handler>
     </work-item-handlers>
     <environment-entries/>
     <configurations/>
