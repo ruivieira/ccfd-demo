@@ -164,17 +164,25 @@ If a message is sent to a "customer outgoing" Kafka topic, a notification is sen
 
 If the customer replies (in both scenarios: they either made the transaction or not), a message is written to a "customer response" topic. The router (described below) subscribes to messages in this topic, and signals the business process with the customer response.
 
-To build the notification service, you can use Maven to build the project and Docker to build the image:
+To build the notification service, start by cloning the service's repo:
 
 ```shell
-$ mvn clean package
-$ docker build -f src/main/docker/Dockerfile.jvm -t ruivieira/ccfd-notification-service:latest .
+$ git clone https://github.com/ruivieira/ccfd-notification-service.git
 ```
 
-Once it's build, you can deploy it using
+You can then use `oc` to setup the `BuildConfig` and `ImageStream`:
 
 ```shell
-$ oc new-app ruivieira/ccfd-notification-service:latest \
+$ oc new-build --binary --name=ccfd-notification-service -l app=quarkus-ccfd-notification-service
+$ oc patch bc/ccfd-notification-service -p "{\"spec\":{\"strategy\":{\"dockerStrategy\":{\"dockerfilePath\":\"src/main/docker/Dockerfile.native\"}}}}"
+$ oc start-build ccfd-notification-service --from-dir=. --follow
+
+```
+
+Once it's built, you can deploy it using
+
+```shell
+$ oc new-app --image-stream=ccfd-notification-service:latest \
     -e BROKER_URL=ccfd-kafka-brokers:9092
 ```
 
@@ -226,6 +234,28 @@ $ NEXUS_URL=<NEXUS_URL> mvn clean deploy
 * `SELDON_URL`  - Seldon's server address
 * `KAFKA_TOPIC` - topic which Camel listen too
 * `SELDON_TOKEN` (optional) - Seldon's authentication token
+
+## Description
+
+### Business processes
+
+![](docs/process-fraud.png)
+
+The Business Process (BP) corresponding to a potential fraudulent transaction consists of the following flow:
+
+* The process is instantiated with the transaction's data
+* The `CustomerNotification` node sends a message to the `<CUSTOMER-OUTGOING>` topic with the customer's `id` and the transaction's `id`
+* At this point, either one of the two branches will be active:
+  * If no customer response is receive, after a certain specified time, a timer will trigger the creation of a User Task, assigned to a fraud investigator.
+  * If (before the timer expires) a response sent, the process is notified via a signal, containing the customer's response as the payload (either `true`, the customer made the transation or `false`, they did not). From here two additional branches:
+    * If the customer acknowledges the transaction, it is automatically approved
+    * If not, the transaction is cancelled
+
+The customer notification/response works by:
+
+* Sending a message with the customer and transaction id to `<CUSTOMER-OUTGOING>` topic
+* This message is picked by the [notification service](#notification-service), which will send an approriate notification (email, SMS, *etc*) 
+* Customer response is sent to the `<CUSTOMER-RESPONSE>` topic, which is picked by the Camel router, which in turn sends it to the appropriate container, using a KIE server REST endpoint, as a signal containing the customer response
 
 ## Footnotes
 
