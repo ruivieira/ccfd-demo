@@ -25,7 +25,7 @@ import java.util.ServiceLoader;
 
 public class ExampleSeldonPredictionServiceRegistry {
     private static final ServiceLoader<PredictionService> foundServices = ServiceLoader.load(PredictionService.class, ExampleSeldonPredictionServiceRegistry.class.getClassLoader());
-    private String selectedService = System.getProperty("org.jbpm.prediction.service", ExampleSeldonPredictionService.IDENTIFIER);
+    private String selectedService = System.getProperty("dev.ruivieira.service.prediction.examples", ExampleSeldonPredictionService.IDENTIFIER);
     private Map<String, PredictionService> predictionServices = new HashMap<>();
 
     private ExampleSeldonPredictionServiceRegistry() {

@@ -19,6 +19,8 @@ package dev.ruivieira.service.prediction.examples;
 import dev.ruivieira.service.messages.PredictionResponse;
 import dev.ruivieira.service.prediction.AbstractSeldonPredictionService;
 import org.kie.api.task.model.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +31,8 @@ import java.util.Map;
  * Example concrete implementation of a Seldon prediction service.
  */
 public class ExampleSeldonPredictionService extends AbstractSeldonPredictionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExampleSeldonPredictionService.class);
 
     public static final String IDENTIFIER = "SeldonPredictionService";
 
@@ -46,12 +50,13 @@ public class ExampleSeldonPredictionService extends AbstractSeldonPredictionServ
      */
     @Override
     public List<List<Double>> buildPredictFeatures(Task task, Map<String, Object> map) {
-        System.out.println("Got a map with " + map);
+        logger.debug("??????????????????????");
+        logger.debug("Got task info: " + task);
+        logger.debug("Got a map with " + map);
         List<List<Double>> result = new ArrayList<>();
         List<Double> single = new ArrayList<>();
 
-        single.add(map.get("ActorId").equals("john") ? 0.0 : 1.0);
-        single.add(Double.valueOf((Integer) map.get("level")));
+        single.add((Double) map.get("v3"));
         result.add(single);
         return result;
     }
@@ -83,7 +88,6 @@ public class ExampleSeldonPredictionService extends AbstractSeldonPredictionServ
             result.put("outcome", false);
             result.put("confidence", o2);
         }
-
         return result;
     }
 }
