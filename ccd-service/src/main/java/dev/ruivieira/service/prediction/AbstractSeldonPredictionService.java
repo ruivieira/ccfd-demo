@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -46,23 +47,6 @@ public abstract class AbstractSeldonPredictionService implements PredictionServi
     private static final String SELDON_CONNECTION_POOL_SIZE_KEY = "org.jbpm.task.prediction.service.seldon.connection_pool_size";
 
     public AbstractSeldonPredictionService() {
-        // Seldon connection configuration
-//        Configurations configs = new Configurations();
-//        CompositeConfiguration compositeConfiguration = new CompositeConfiguration();
-//
-//        Configuration javaProperties = new PropertiesConfiguration();
-//        Configuration systemProperties = new SystemConfiguration();
-//
-//        compositeConfiguration.addConfiguration(javaProperties);
-//        compositeConfiguration.addConfiguration(systemProperties);
-//        try {
-//            Configuration config = configs.properties(new File("seldon.properties"));
-//            compositeConfiguration.addConfiguration(config);
-//        } catch (ConfigurationException e) {
-//            logger.debug("Could not find the file 'seldon.properties'. Trying other configuration sources.");
-//        }
-//
-//        final String SELDON_URL = compositeConfiguration.getString(SELDON_URL_KEY);
         final String SELDON_URL = System.getenv("SELDON_URL");
 
         if (SELDON_URL == null) {
@@ -129,7 +113,7 @@ public abstract class AbstractSeldonPredictionService implements PredictionServi
         logger.info("Building features");
         final List<List<Double>> features = buildPredictFeatures(task, map);
         try {
-            System.out.println("Trying to send a request for " + map);
+            logger.debug("Trying to send a request for " + map);
             final PredictionRequest request = new PredictionRequest();
             request.addFeatures(features.get(0));
             final String json = PredictionRequest.toJSON(request);
@@ -139,10 +123,9 @@ public abstract class AbstractSeldonPredictionService implements PredictionServi
             final Map<String, Object> parsedResponse = parsePredictFeatures(response);
             return new PredictionOutcome((Double) parsedResponse.get("confidence"), this.confidenceThreshold, parsedResponse);
         } catch (Exception e) {
-            System.out.println("Failed!");
             logger.error(e.getMessage());
         }
-        System.out.println("Returning empty prediction");
+        logger.debug("Returning empty prediction");
         return new PredictionOutcome();
     }
 
@@ -151,7 +134,7 @@ public abstract class AbstractSeldonPredictionService implements PredictionServi
      */
     @Override
     public void train(Task task, Map<String, Object> map, Map<String, Object> map1) {
-        // Training not supported
+        logger.info("Training is not supported for task: " + task);
     }
 
     /**
