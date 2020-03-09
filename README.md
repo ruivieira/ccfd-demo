@@ -7,7 +7,6 @@
 - [Contents](#contents)
   * [Setup](#setup)
     + [Requirements](#requirements)
-    + [Running locally](#running-locally)
     + [Running on OpenShift](#running-on-openshift)
       - [Kafka](#kafka)
       - [Kafka producer](#kafka-producer)
@@ -19,7 +18,13 @@
       - [Camel router](#camel-router)
       - [Optional](#optional)
         * [Building the KJARs](#building-the-kjars)
+    + [Running locally](#running-locally)
+      - [`kieserver`](#-kieserver-)
+      - [`camel`](#-camel-)
+      - [`notifications`](#-notifications-)
     + [Environment variables](#environment-variables)
+  * [Description](#description)
+    + [Business processes](#business-processes)
   * [Footnotes](#footnotes)
 
 ## Setup
@@ -33,22 +38,6 @@ You will need:
   * messages with the format `{"id" : int, "amount" : double}`
 * Seldon
   * Returning an `ndarray` with label probabilities for fraud/not-fraund (`[[0.12, 0.88]]`)
-
-### Running locally
-
-Set the environment variables pointing to the Kafka broker and Seldon's server:
-
-* `BROKER_URL` - Kafka's broker adress
-* `SELDON_URL`  - Seldon's server address
-* `KAFKA_TOPIC` - topic which Camel listen too
-* `SELDON_TOKEN` (optional) - Seldon's authentication token
-
-To build the dependencies and start the KIE server run:
-
-```shell
-$ cd ccd-service
-$ ./launch.sh clean install
-```
 
 ### Running on OpenShift
 
@@ -227,6 +216,58 @@ $ git clone https://github.com/ruivieira/ccfd-kjars.git
 $ cd ccfd-kjars
 $ NEXUS_URL=<NEXUS_URL> mvn clean deploy
 ```
+
+### Running locally
+
+To run a local version of this demo locally a Docker compose is provided.
+The following images need to be built locally:
+
+* `kieserver`, the KIE execution server
+* `camel`, the Apache Camel router
+* `notifications `, the Quarkus customer notification service
+
+The steps are described below.
+
+#### `kieserver`
+
+To build the KIE server, clone this repository and run:
+
+```shell
+$ mvn -f ccd-model/pom.xml clean install
+$ mvn -f ccd-fraud-kjar/pom.xml clean install -P docker
+$ mvn -f ccd-standard-kjar/pom.xml clean install -P docker
+$ mvn -f ccd-service/pom.xml clean install -P docker,h2
+```
+
+#### `camel`
+
+To build the Camel, clone the repository and run:
+
+```shell
+$ git clone https://github.com/ruivieira/ccfd-fuse.git
+$ cd ccfd-fuse
+$ mvn clean install -P docker
+```
+
+#### `notifications`
+
+To build the Quarkus [notification service](https://github.com/ruivieira/ccfd-notification-service), clone the repo and run:
+
+```shell
+$ git clone https://github.com/ruivieira/ccfd-notification-service.git
+$ cd ccfd-notification-service
+$ mvn clean package
+$ docker build -f src/main/docker/Dockerfile.jvm -t ruivieira/ccfd-notification-service:latest .
+```
+
+Once you have built the above images, the demo can be started using the `docker-composer up` command.
+The preferred order of instantiation is:
+
+* `zoo1` and `kafka1`
+* `seldon`
+* `kieserver`
+* `kafka-producer`
+* `camel`
 
 ### Environment variables
 
