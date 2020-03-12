@@ -14,14 +14,14 @@
       - [Kie server](#kie-server)
         * [Nexus](#nexus)
         * [Execution server](#execution-server)
+          + [Building from source](#building-from-source)
       - [Notification service](#notification-service)
+        * [Building from source](#building-from-source-1)
       - [Camel router](#camel-router)
+        * [Building from source](#building-from-source-2)
       - [Optional](#optional)
         * [Building the KJARs](#building-the-kjars)
     + [Running locally](#running-locally)
-      - [`kieserver`](#-kieserver-)
-      - [`camel`](#-camel-)
-      - [`notifications`](#-notifications-)
     + [Environment variables](#environment-variables)
   * [Description](#description)
     + [Business processes](#business-processes)
@@ -31,23 +31,24 @@
 
 ### Requirements
 
-You will need:
+For an OpenShift deployment:
 
-* Kafka
-  * with a topic named `ccd`
-  * messages with the format `{"id" : int, "amount" : double}`
-* Seldon
-  * Returning an `ndarray` with label probabilities for fraud/not-fraund (`[[0.12, 0.88]]`)
+* OpenShift 4.x cluster
+* `oc`
+
+For testing locally:
+
+* `docker-compose`
 
 ### Running on OpenShift
 
-To deploy all the components in OpenShift, the simplest way is to login using `oc`, e.g.:
+To deploy all the components in OpenShift, the simplest way is to login using `oc`, *e.g.*:
 
 ```shell
 $ oc login -u <USER>
 ```
 
-Next you can create a project for this demo, such as
+Next you can create a project for this demo, such as:
 
 ```shell
 $ oc new-project ccfd
@@ -106,27 +107,10 @@ $ oc expose svc/nexus
 
 ##### Execution server
 
-To deploy the KIE server (this repo), Maven and a JDK need to be available on your local machine. 
-First clone this repository:
+To deploy the KIE server, the container image `ruivieira/ccd-service` can be used (located [here](https://hub.docker.com/repository/docker/ruivieira/ccd-service)),  deploying it with:
 
 ```shell
-$ git clone https://github.com/ruivieira/ccfd-demo.git
-```
-
-Next, we use `fabric8` to build the images as[^1]:
-
-```shell
-$ cd ccfd-demo
-$ mvn -f ccd-model/pom.xml clean install
-$ mvn -f ccd-standard-kjar/pom.xml clean install -P openshift
-$ mvn -f ccd-fraud-kjar/pom.xml clean install -P openshift
-$ mvn -f ccd-service/pom.xml clean install -P openshift,h2
-```
-
-Or simply run `build.sh`. Once the images are built, we deploy them on OpenShift with:
-
-```shell
-$ oc new-app ccd-service:1.0-SNAPSHOT \
+$ oc new-app ruivieira/ccd-service:1.0-SNAPSHOT \
     -e SELDON_URL=ccfd-seldon-model:5000 \
     -e NEXUS_URL=http://nexus:8081 \
     -e CUSTOMER_NOTIFICATION_TOPIC=ccd-customer-outgoing \
@@ -145,6 +129,27 @@ If you want to interact with the KIE server's REST interface from outside OpenSh
 $ oc expose svc/ccd-service
 ```
 
+###### Building from source
+
+If you want to build the execution server from the source, you will need Maven and a JDK need to be available on your local machine. 
+First clone this repository:
+
+```shell
+$ git clone https://github.com/ruivieira/ccfd-demo.git
+```
+
+Next, we use `fabric8` to build the images as[^1]:
+
+```shell
+$ cd ccfd-demo
+$ mvn -f ccd-model/pom.xml clean install
+$ mvn -f ccd-standard-kjar/pom.xml clean install -P openshift
+$ mvn -f ccd-fraud-kjar/pom.xml clean install -P openshift
+$ mvn -f ccd-service/pom.xml clean install -P openshift,h2
+```
+
+Or simply run `build.sh`. Once the images are built, we deploy them on OpenShift using the same commands as in the previous section.
+
 #### Notification service
 
 The notification service is an event-driven micro-service responsible for relaying notifications to the customer and customer responses. 
@@ -153,7 +158,16 @@ If a message is sent to a "customer outgoing" Kafka topic, a notification is sen
 
 If the customer replies (in both scenarios: they either made the transaction or not), a message is written to a "customer response" topic. The router (described below) subscribes to messages in this topic, and signals the business process with the customer response.
 
-To build the notification service, start by cloning the service's repo:
+To deploy the notification service, we use the image `ruivieira/ccfd-notification-service` (available [here](https://hub.docker.com/repository/docker/ruivieira/ccfd-notification-service)), by running:
+
+```shell
+$ oc new-app ruivieira/ccfd-notification-service:1.0-SNAPSHOT \
+    -e BROKER_URL=ccfd-kafka-brokers:9092
+```
+
+##### Building from source
+
+To build the notification service from the source, start by cloning the service's [repository](https://github.com/ruivieira/ccfd-notification-service):
 
 ```shell
 $ git clone https://github.com/ruivieira/ccfd-notification-service.git
@@ -179,24 +193,16 @@ $ oc new-app --image-stream=ccfd-notification-service:latest \
 
 The Camel router is responsible consume messages arriving in specific topics, requesting a prediction to the Seldon model, and then triggering different REST endpoints according to that prediction.
 The route is selected depending on whether a transaction is predicted as fraudulent or not. Depending on the model's prediction a specific business process will be triggered on the KIE server.
-To deploy a router with listens to the topic `KAFKA_TOPIC` from Kafka's broker `BROKER_URL` and starts a process instance on the KIE server at `KIE_SERVER_URL`, first build the [router located here](https://github.com/ruivieira/ccfd-fuse) with
+To deploy a router with listens to the topic `KAFKA_TOPIC` from Kafka's broker `BROKER_URL` and starts a process instance on the KIE server at `KIE_SERVER_URL`, we can use the built image `ruimvieira/ccd-fuse` (available [here](https://hub.docker.com/repository/docker/ruivieira/ccd-fuse)):
 
 ```shell
-$ git clone https://github.com/ruivieira/ccfd-fuse.git
-$ mvn -f ccfd-fuse/pom.xml clean install -P openshift
-```
-
-and then deploy it with
-
-```shell
-$ oc new-app ccd-fuse:1.0-SNAPSHOT \
+$ oc new-app ruivieira/ccd-fuse:1.0-SNAPSHOT \
     -e BROKER_URL=ccfd-kafka-brokers:9092 \
     -e KAFKA_TOPIC=ccd \
     -e KIE_SERVER_URL=http://ccd-service:8090 \
     -e SELDON_URL=http://ccfd-seldon-model:5000 \
     -e CUSTOMER_NOTIFICATION_TOPIC=ccd-customer-outgoing \
     -e CUSTOMER_RESPONSE_TOPIC=ccd-customer-response
-
 ```
 
 Also optionally, a Seldon token can be provided:
@@ -205,7 +211,22 @@ Also optionally, a Seldon token can be provided:
 -e SELDON_TOKEN=<SELDON_TOKEN>
 ```
 
+##### Building from source
+
+To build the router from source, first clone the [repository](https://github.com/ruivieira/ccfd-fuse) and build it with:
+
+```shell
+$ git clone https://github.com/ruivieira/ccfd-fuse.git
+$ mvn -f ccfd-fuse/pom.xml clean install -P openshift
+```
+
+and then deploy it with the same commands as the previous section.
+
+
+
 #### Optional
+
+
 
 ##### Building the KJARs
 
@@ -217,57 +238,20 @@ $ cd ccfd-kjars
 $ NEXUS_URL=<NEXUS_URL> mvn clean deploy
 ```
 
+
+
 ### Running locally
 
-To run a local version of this demo locally a Docker compose is provided.
-The following images need to be built locally:
+To run a local version of this demo locally a Docker compose is provided. The demo can be started using the `docker-composer up` command.
 
-* `kieserver`, the KIE execution server
-* `camel`, the Apache Camel router
-* `notifications `, the Quarkus customer notification service
+If you prefer to start the services individually,  the preferred order of instantiation is:
 
-The steps are described below.
-
-#### `kieserver`
-
-To build the KIE server, clone this repository and run:
-
-```shell
-$ mvn -f ccd-model/pom.xml clean install
-$ mvn -f ccd-fraud-kjar/pom.xml clean install -P docker
-$ mvn -f ccd-standard-kjar/pom.xml clean install -P docker
-$ mvn -f ccd-service/pom.xml clean install -P docker,h2
-```
-
-#### `camel`
-
-To build the Camel, clone the repository and run:
-
-```shell
-$ git clone https://github.com/ruivieira/ccfd-fuse.git
-$ cd ccfd-fuse
-$ mvn clean install -P docker
-```
-
-#### `notifications`
-
-To build the Quarkus [notification service](https://github.com/ruivieira/ccfd-notification-service), clone the repo and run:
-
-```shell
-$ git clone https://github.com/ruivieira/ccfd-notification-service.git
-$ cd ccfd-notification-service
-$ mvn clean package
-$ docker build -f src/main/docker/Dockerfile.jvm -t ruivieira/ccfd-notification-service:latest .
-```
-
-Once you have built the above images, the demo can be started using the `docker-composer up` command.
-The preferred order of instantiation is:
-
-* `zoo1` and `kafka1`
-* `seldon`
-* `kieserver`
-* `kafka-producer`
-* `camel`
+* `zoo1` and `kafka1` - Zookeeper and Apache Kafka
+* `seldon ` - Seldon model server
+* `kieserver ` - KIE execution server
+* `kafka-producer` - Kafka transaction producer
+* `notification` - Customer notification service
+* `camel` - Apache Camel router
 
 ### Environment variables
 
