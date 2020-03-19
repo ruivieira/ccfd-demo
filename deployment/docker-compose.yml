@@ -38,26 +38,6 @@ services:
             BROKER_URL: 'kafka1:9092'
             KAFKA_TOPIC: 'ccd'
 
-    grafana:
-        image: grafana/grafana
-        hostname: grafana
-        volumes:
-          - ./ccfd-demo/deployment/grafana:/etc/grafana/provisioning
-        ports:
-          - "3000:3000"
-
-    prometheus:
-        image: prom/prometheus
-        hostname: prometheus
-        volumes:
-          - ./ccfd-demo/deployment/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-        command:
-          - '--config.file=/etc/prometheus/prometheus.yml'
-        ports:
-          - "9090:9090"
-        # depends_on: 
-        #   - kieserver
-
     seldon:
         image: ruivieira/ccfd-seldon-model:latest
         hostname: seldon
@@ -69,17 +49,6 @@ services:
         hostname: nexus
         ports:
             - "8081:8081"
-
-    kiestorage:
-      image: postgres
-      hostname: kiestorage
-      restart: always
-      ports:
-        - "5432:5432"
-      environment:
-        POSTGRES_PASSWORD: admin123
-        POSTGRES_USER: admin
-        POSTGRES_DB: jbpm
         
     kieserver:
         image: ruivieira/ccd-service:1.0-SNAPSHOT

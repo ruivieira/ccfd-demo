@@ -29,33 +29,46 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public abstract class AbstractSeldonPredictionService implements PredictionService {
+public class SeldonPredictionService implements PredictionService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractSeldonPredictionService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SeldonPredictionService.class);
     protected final ResteasyClient client;
     protected final ResteasyWebTarget predict;
     private double confidenceThreshold = 1.0;
 
-    private static final String SELDON_URL_KEY = "org.jbpm.task.prediction.service.seldon.url";
+    private static final String SELDON_URL_KEY = "SELDON_URL";
+
     private static final String CONFIDENCE_THRESHOLD_KEY = "org.jbpm.task.prediction.service.seldon.confidence_threshold";
     private static final String SELDON_TIMEOUT_KEY = "org.jbpm.task.prediction.service.seldon.timeout";
     private static final String SELDON_CONNECTION_POOL_SIZE_KEY = "org.jbpm.task.prediction.service.seldon.connection_pool_size";
 
-    public AbstractSeldonPredictionService() {
-        final String SELDON_URL = System.getenv("SELDON_URL");
+    private static final String SELDON_ENDPOINT_KEY = "SELDON_ENDPOINT";
+    private static final String SELDON_ENDPOINT_DEFAULT = "predict";
+
+
+    public SeldonPredictionService() {
+        final String SELDON_URL = System.getenv(SELDON_URL_KEY);
 
         if (SELDON_URL == null) {
-            final String errorMessage = "No Seldon endpoint URL specified";
+            final String errorMessage = "No Seldon URL specified";
             logger.error(errorMessage);
             throw new IllegalArgumentException(errorMessage);
         }
 
-        logger.debug("Using Seldon endpoint " + SELDON_URL);
+        String SELDON_ENDPOINT = System.getenv(SELDON_ENDPOINT_KEY);
+
+        if (SELDON_ENDPOINT == null) {
+            SELDON_ENDPOINT = SELDON_ENDPOINT_DEFAULT;
+            logger.info("Using default Seldon endpoint '/predict'");
+        }
+
+        logger.debug("Using Seldon endpoint " + SELDON_URL + "/" + SELDON_ENDPOINT);
 
         ResteasyClientBuilder clientBuilder = new ResteasyClientBuilder();
 
@@ -87,7 +100,7 @@ public abstract class AbstractSeldonPredictionService implements PredictionServi
 
         client = clientBuilder.build();
 
-        predict = client.target(SELDON_URL).path("predict");
+        predict = client.target(SELDON_URL).path(SELDON_ENDPOINT);
 
         // set confidence threshold from configuration
 //        final String CONFIDENCE_THRESHOLD = compositeConfiguration.getString(CONFIDENCE_THRESHOLD_KEY);
@@ -124,9 +137,10 @@ public abstract class AbstractSeldonPredictionService implements PredictionServi
             return new PredictionOutcome((Double) parsedResponse.get("confidence"), this.confidenceThreshold, parsedResponse);
         } catch (Exception e) {
             logger.error(e.getMessage());
+            throw new IllegalArgumentException();
         }
-        logger.debug("Returning empty prediction");
-        return new PredictionOutcome();
+//        logger.debug("Returning empty prediction");
+//        return new PredictionOutcome();
     }
 
     /**
@@ -137,27 +151,62 @@ public abstract class AbstractSeldonPredictionService implements PredictionServi
         logger.info("Training is not supported for task: " + task);
     }
 
+    public static final String IDENTIFIER = "SeldonPredictionService";
+
+    @Override
+    public String getIdentifier() {
+        return IDENTIFIER;
+    }
+
     /**
-     * Construct a list of numerical features which can be passed to Seldon with the provided
-     * task and input data.
-     * It returns a two-dimensional numerical list where each list element corresponds
-     * to a single prediction request's features.
-     * This is domain specific and must be implemented in the concrete service.
+     * Build a domain specific list of numerical features based on the input data.
      *
      * @param task Human task data
      * @param map A map containing the input attribute names as keys and the attribute values as values.
-     * @return A two-dimensional list of numerical features.
+     * @return A 2D {@link List} of numerical features
      */
-    public abstract List<List<Double>> buildPredictFeatures(Task task, Map<String, Object> map);
+
+    public List<List<Double>> buildPredictFeatures(Task task, Map<String, Object> map) {
+        logger.debug("??????????????????????");
+        logger.debug("Got task info: " + task);
+        logger.debug("Got a map with " + map);
+        List<List<Double>> result = new ArrayList<>();
+        List<Double> single = new ArrayList<>();
+
+        single.add((Double) map.get("v3"));
+        result.add(single);
+        return result;
+    }
 
     /**
-     * Builds the {@link PredictionOutcome} data from the deserialized Seldon response.
-     * This is domain specific and must be implemented in the concrete service.
-     *
+     * Transfom the deserialised Seldon's response ({@link PredictionResponse}) into a
+     * {@link org.kie.internal.task.api.prediction.PredictionOutcome} data map.
      * @param response Deserialized Seldon's response
-     * @return A {@link Map} as the {@link PredictionOutcome} data
+     * @return A map containing data for {@link org.kie.internal.task.api.prediction.PredictionOutcome}
      */
-    public abstract Map<String, Object> parsePredictFeatures(PredictionResponse response);
+    public Map<String, Object> parsePredictFeatures(PredictionResponse response) {
+        Map<String, Object> result = new HashMap<>();
+        List<Double> features = new ArrayList<>();
+
+        if (response.getData().getOutcomes()!=null) {
+
+            features = response.getData().getOutcomes().get(0);
+
+        }
+
+        double o1 = features.get(0);
+        double o2 = features.get(1);
+
+        if (o1 > o2) {
+            result.put("outcome", true);
+            result.put("confidence", o1);
+        } else {
+            result.put("outcome", false);
+            result.put("confidence", o2);
+        }
+        return result;
+    }
+
 
     public double getConfidenceThreshold() {
         return confidenceThreshold;

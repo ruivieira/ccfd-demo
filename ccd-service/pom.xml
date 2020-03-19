@@ -281,6 +281,11 @@
                                             <JAVA_OPTS>-Dorg.jbpm.task.prediction.service=SeldonPredictionService</JAVA_OPTS>
                                         </env>
                                     </build>
+                                    <run>
+                                        <ports>
+                                            <port>8090:8090</port>
+                                        </ports>
+                                    </run>
                                 </image>
                             </images>
                         </configuration>
