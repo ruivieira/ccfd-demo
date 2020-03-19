@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package dev.ruivieira.service.prediction.examples;
+package dev.ruivieira.service.prediction;
 
 import org.kie.internal.task.api.prediction.PredictionService;
 
@@ -23,18 +23,18 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 
-public class ExampleSeldonPredictionServiceRegistry {
-    private static final ServiceLoader<PredictionService> foundServices = ServiceLoader.load(PredictionService.class, ExampleSeldonPredictionServiceRegistry.class.getClassLoader());
-    private String selectedService = System.getProperty("dev.ruivieira.service.prediction.examples", ExampleSeldonPredictionService.IDENTIFIER);
+public class SeldonPredictionServiceRegistry {
+    private static final ServiceLoader<PredictionService> foundServices = ServiceLoader.load(PredictionService.class, SeldonPredictionServiceRegistry.class.getClassLoader());
+    private String selectedService = System.getProperty("org.jbpm.task.prediction.service", SeldonPredictionService.IDENTIFIER);
     private Map<String, PredictionService> predictionServices = new HashMap<>();
 
-    private ExampleSeldonPredictionServiceRegistry() {
+    private SeldonPredictionServiceRegistry() {
 
         foundServices
                 .forEach(strategy -> predictionServices.put(strategy.getIdentifier(), strategy));
     }
 
-    public static ExampleSeldonPredictionServiceRegistry get() {
+    public static SeldonPredictionServiceRegistry get() {
         return Holder.INSTANCE;
     }
 
@@ -47,12 +47,12 @@ public class ExampleSeldonPredictionServiceRegistry {
         return predictionService;
     }
 
-    public synchronized void addStrategy(ExampleSeldonPredictionService predictionService) {
+    public synchronized void addStrategy(SeldonPredictionService predictionService) {
         this.predictionServices.put(predictionService.getIdentifier(), predictionService);
 
     }
 
     private static class Holder {
-        static final ExampleSeldonPredictionServiceRegistry INSTANCE = new ExampleSeldonPredictionServiceRegistry();
+        static final SeldonPredictionServiceRegistry INSTANCE = new SeldonPredictionServiceRegistry();
     }
 }

@@ -22,3 +22,4 @@ ccd-kjar/.classpath
 ccd-fraud-kjar/target/
 
 ccd-standard-kjar/target/
+deployment/zk-single-kafka-single

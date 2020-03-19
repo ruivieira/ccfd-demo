@@ -4,28 +4,29 @@
 
 # Contents
 
+- [CCFD demo](#ccfd-demo)
 - [Contents](#contents)
-  * [Setup](#setup)
-    + [Requirements](#requirements)
-    + [Running on OpenShift](#running-on-openshift)
+  - [Setup](#setup)
+    - [Requirements](#requirements)
+    - [Running on OpenShift](#running-on-openshift)
       - [Kafka](#kafka)
       - [Kafka producer](#kafka-producer)
       - [Seldon](#seldon)
       - [Kie server](#kie-server)
-        * [Nexus](#nexus)
-        * [Execution server](#execution-server)
-          + [Building from source](#building-from-source)
+        - [Nexus](#nexus)
+        - [Execution server](#execution-server)
+          - [Building from source](#building-from-source)
       - [Notification service](#notification-service)
-        * [Building from source](#building-from-source-1)
+        - [Building from source](#building-from-source-1)
       - [Camel router](#camel-router)
-        * [Building from source](#building-from-source-2)
+        - [Building from source](#building-from-source-2)
       - [Optional](#optional)
-        * [Building the KJARs](#building-the-kjars)
-    + [Running locally](#running-locally)
-    + [Environment variables](#environment-variables)
-  * [Description](#description)
-    + [Business processes](#business-processes)
-  * [Footnotes](#footnotes)
+        - [Building the KJARs](#building-the-kjars)
+    - [Running locally](#running-locally)
+    - [Environment variables](#environment-variables)
+  - [Description](#description)
+    - [Business processes](#business-processes)
+  - [Footnotes](#footnotes)
 
 ## Setup
 
@@ -121,6 +122,12 @@ If the Seldon server requires an authentication token, this can be passed to the
 
 ```shell
 -e SELDON_TOKEN=<SELDON_TOKEN>
+```
+
+By default, the KIE server will request a prediction to the endpoint `<SELDON_URL>/predict`. If however, your Seldon deployment uses another prediction endpoint, you can specify it by adding the `SELDON_ENDPOINT` enviroment variable above, for instance:
+
+```shell
+-e SELDON_ENDPOINT=api/v0.1/predictions
 ```
 
 If you want to interact with the KIE server's REST interface from outside OpenShift, you can expose its service with
