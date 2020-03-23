@@ -44,6 +44,12 @@ services:
         ports:
             - "5000:5000"
 
+    seldon-usertask:
+        image: ruivieira/ccfd-seldon-usertask-model:latest
+        hostname: seldon-usertask
+        ports:
+          - "5000:5000"
+
     nexus:
         image: sonatype/nexus
         hostname: nexus
@@ -56,7 +62,7 @@ services:
         ports:
           - "8090:8090"
         environment: 
-          SELDON_URL: 'http://seldon:5000'
+          SELDON_URL: 'http://seldon-usertask:5000'
           BROKER_URL: 'http://kafka1:9092'
           NEXUS_URL: 'http://nexus:8081'
           CUSTOMER_NOTIFICATION_TOPIC: 'ccd-customer-outgoing'
