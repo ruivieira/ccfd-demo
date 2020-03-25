@@ -15,6 +15,7 @@
       - [Kie server](#kie-server)
         - [Nexus](#nexus)
         - [Execution server](#execution-server)
+          - [Execution server optional configuration](#execution-server-optional-configuration)
           - [Building from source](#building-from-source)
       - [Notification service](#notification-service)
         - [Building from source](#building-from-source-1)
@@ -118,6 +119,8 @@ $ oc new-app ruivieira/ccd-service:1.0-SNAPSHOT \
     -e BROKER_URL=ccfd-kafka-brokers:9092
 ```
 
+###### Execution server optional configuration
+
 If the Seldon server requires an authentication token, this can be passed to the KIE server by adding the following environment variable:
 
 ```shell
@@ -128,6 +131,21 @@ By default, the KIE server will request a prediction to the endpoint `<SELDON_UR
 
 ```shell
 -e SELDON_ENDPOINT=api/v0.1/predictions
+```
+
+The HTTP connection parameters can also be configured, namely the _connection pool size_ and the connections _timeout_. The timeout value provided is treated as milliseconds. For instance:
+
+```shell
+-e SELDON_TIMEOUT=5000 \ # five second timeout
+-e SELDON_POOL_SIZE=5    # allows for 5 simulataneous HTTP connections
+```
+
+The prediction service's _confidence threshold_, above which a prediction automatically assigns an output and
+closes the user task can be also provided. It is assumed to be a probability value between `0.0` and `1.0`.
+If not provided, the default value is `1.0`. To specify it use:
+
+```shell
+-e CONFIDENCE_THRESHOLD=0.5 # as an example
 ```
 
 If you want to interact with the KIE server's REST interface from outside OpenShift, you can expose its service with

@@ -44,9 +44,9 @@ public class SeldonPredictionService implements PredictionService {
 
     private static final String SELDON_URL_KEY = "SELDON_URL";
 
-    private static final String CONFIDENCE_THRESHOLD_KEY = "org.jbpm.task.prediction.service.seldon.confidence_threshold";
-    private static final String SELDON_TIMEOUT_KEY = "org.jbpm.task.prediction.service.seldon.timeout";
-    private static final String SELDON_CONNECTION_POOL_SIZE_KEY = "org.jbpm.task.prediction.service.seldon.connection_pool_size";
+    private static final String CONFIDENCE_THRESHOLD_KEY = "CONFIDENCE_THRESHOLD";
+    private static final String SELDON_TIMEOUT_KEY = "SELDON_TIMEOUT";
+    private static final String SELDON_CONNECTION_POOL_SIZE_KEY = "SELDON_POOL_SIZE";
 
     private static final String SELDON_ENDPOINT_KEY = "SELDON_ENDPOINT";
     private static final String SELDON_ENDPOINT_DEFAULT = "predict";
@@ -55,25 +55,26 @@ public class SeldonPredictionService implements PredictionService {
     public SeldonPredictionService() {
         final String SELDON_URL = System.getenv(SELDON_URL_KEY);
 
+        // Set the Seldon server endpoint URL
         if (SELDON_URL == null) {
             final String errorMessage = "No Seldon URL specified";
             logger.error(errorMessage);
             throw new IllegalArgumentException(errorMessage);
         }
 
+        // Set the Seldon API URL endpoint
         String SELDON_ENDPOINT = System.getenv(SELDON_ENDPOINT_KEY);
 
         if (SELDON_ENDPOINT == null) {
             SELDON_ENDPOINT = SELDON_ENDPOINT_DEFAULT;
             logger.info("Using default Seldon endpoint '/predict'");
         }
-
         logger.debug("Using Seldon endpoint " + SELDON_URL + "/" + SELDON_ENDPOINT);
+
 
         ResteasyClientBuilder clientBuilder = new ResteasyClientBuilder();
 
-//        final String seldonTimeoutStr = compositeConfiguration.getString(SELDON_TIMEOUT_KEY);
-        final String seldonTimeoutStr = System.getenv("SELDON_TIMEOUT");
+        final String seldonTimeoutStr = System.getenv(SELDON_TIMEOUT_KEY);
 
         if (seldonTimeoutStr!=null) {
             try {
@@ -85,8 +86,7 @@ public class SeldonPredictionService implements PredictionService {
             }
         }
 
-//        final String seldonConnectioPoolSizeStr = compositeConfiguration.getString(SELDON_CONNECTION_POOL_SIZE_KEY);
-        final String seldonConnectioPoolSizeStr = System.getenv("SELDON_CONNECTION_POOL");
+        final String seldonConnectioPoolSizeStr = System.getenv(SELDON_CONNECTION_POOL_SIZE_KEY);
 
         if (seldonConnectioPoolSizeStr!=null) {
             try {
@@ -103,8 +103,7 @@ public class SeldonPredictionService implements PredictionService {
         predict = client.target(SELDON_URL).path(SELDON_ENDPOINT);
 
         // set confidence threshold from configuration
-//        final String CONFIDENCE_THRESHOLD = compositeConfiguration.getString(CONFIDENCE_THRESHOLD_KEY);
-        final String CONFIDENCE_THRESHOLD = System.getenv("CONFIDENCE_THRESHOLD");
+        final String CONFIDENCE_THRESHOLD = System.getenv(CONFIDENCE_THRESHOLD_KEY);
 
         if (CONFIDENCE_THRESHOLD != null) {
             try {
@@ -116,6 +115,8 @@ public class SeldonPredictionService implements PredictionService {
         } else {
             logger.info("Using default confidence threshold of 1.0");
         }
+
+        logger.debug("Initialization is complete.");
     }
 
     /**
@@ -123,13 +124,14 @@ public class SeldonPredictionService implements PredictionService {
      */
     @Override
     public PredictionOutcome predict(Task task, Map<String, Object> map) {
-        logger.info("Building features");
+        logger.debug("Building features");
         final List<List<Double>> features = buildPredictFeatures(task, map);
         try {
-            logger.debug("Trying to send a request for " + map);
+            logger.debug("Sending a request for " + features);
             final PredictionRequest request = new PredictionRequest();
             request.addFeatures(features.get(0));
             final String json = PredictionRequest.toJSON(request);
+            logger.debug("Request JSON " + json);
             final String stringResponse = predict.request(MediaType.APPLICATION_JSON_TYPE)
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON_TYPE), String.class);
             final PredictionResponse response = PredictionResponse.fromString(stringResponse);
@@ -137,10 +139,8 @@ public class SeldonPredictionService implements PredictionService {
             return new PredictionOutcome((Double) parsedResponse.get("confidence"), this.confidenceThreshold, parsedResponse);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            throw new IllegalArgumentException();
         }
-//        logger.debug("Returning empty prediction");
-//        return new PredictionOutcome();
+        return new PredictionOutcome();
     }
 
     /**
@@ -167,7 +167,6 @@ public class SeldonPredictionService implements PredictionService {
      */
 
     public List<List<Double>> buildPredictFeatures(Task task, Map<String, Object> map) {
-        logger.debug("??????????????????????");
         logger.debug("Got task info: " + task);
         logger.debug("Got a map with " + map);
         List<List<Double>> result = new ArrayList<>();
@@ -175,6 +174,7 @@ public class SeldonPredictionService implements PredictionService {
 
         single.add((Double) map.get("v3"));
         result.add(single);
+        logger.debug("The result is " + result);
         return result;
     }
 
