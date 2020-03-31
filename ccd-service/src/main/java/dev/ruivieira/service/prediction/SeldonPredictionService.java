@@ -173,6 +173,7 @@ public class SeldonPredictionService implements PredictionService {
         List<Double> single = new ArrayList<>();
 
         single.add((Double) map.get("v3"));
+        single.add((Double) map.get("amount"));
         result.add(single);
         logger.debug("The result is " + result);
         return result;
@@ -198,10 +199,10 @@ public class SeldonPredictionService implements PredictionService {
         double o2 = features.get(1);
 
         if (o1 > o2) {
-            result.put("outcome", true);
+            result.put("outcome", 0);
             result.put("confidence", o1);
         } else {
-            result.put("outcome", false);
+            result.put("outcome", 1);
             result.put("confidence", o2);
         }
         return result;
