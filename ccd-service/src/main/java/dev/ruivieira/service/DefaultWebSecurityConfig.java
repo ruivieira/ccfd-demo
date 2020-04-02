@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +39,12 @@ public class DefaultWebSecurityConfig extends WebSecurityConfigurerAdapter {
         auth.inMemoryAuthentication().withUser("wbadmin").password("wbadmin").roles("admin");
         auth.inMemoryAuthentication().withUser("kieserver").password("kieserver1!").roles("kie-server");
     }
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers("/rest/metrics");
+    }
+
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
