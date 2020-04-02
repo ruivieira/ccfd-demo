@@ -1,6 +1,5 @@
 package dev.ruivieira.service.prometheus;
 
-import io.prometheus.client.Counter;
 import io.prometheus.client.Histogram;
 import org.kie.api.event.process.*;
 import org.slf4j.Logger;
