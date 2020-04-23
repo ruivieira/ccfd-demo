@@ -266,22 +266,22 @@
                                                 </files>
                                                 <fileSet>
                                                     <directory>src/main/docker</directory>
-                                                    <outputDirectory>opt/jboss/.m2</outputDirectory>
+                                                    <outputDirectory>.m2</outputDirectory>
                                                     <includes>
                                                         <include>settings.xml</include>
                                                     </includes>
                                                 </fileSet>
                                                 <fileSet>
                                                     <directory>../ccd-fraud-kjar/target/local-repository/maven</directory>
-                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
+                                                    <outputDirectory>.m2/repository</outputDirectory>
                                                 </fileSet>
                                                 <fileSet>
                                                     <directory>../ccd-standard-kjar/target/local-repository/maven</directory>
-                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
+                                                    <outputDirectory>.m2/repository</outputDirectory>
                                                 </fileSet>
                                                 <fileSet>
                                                     <directory>../ccd-model/target/local-repository/maven</directory>
-                                                    <outputDirectory>opt/jboss/.m2/repository</outputDirectory>
+                                                    <outputDirectory>.m2/repository</outputDirectory>
                                                 </fileSet>
                                             </inline>
                                             <user>jboss:jboss:jboss</user>
@@ -289,12 +289,14 @@
                                         <env>
                                             <JAVA_OPTS>-Dorg.jbpm.task.prediction.service=SeldonPredictionService</JAVA_OPTS>
                                         </env>
-                                    </build>
-                                    <run>
                                         <ports>
-                                            <port>8090:8090</port>
+                                            <port>8090</port>
                                         </ports>
-                                    </run>
+                                        <runCmds>
+                                            <run>chgrp -Rf 0 /.m2 &amp;&amp; chmod -Rf g+rwX /.m2</run>
+                                            <run>chgrp -Rf 0 /deployments &amp;&amp; chmod -Rf g+rwX /deployments</run>
+                                        </runCmds>
+                                    </build>
                                 </image>
                             </images>
                         </configuration>
