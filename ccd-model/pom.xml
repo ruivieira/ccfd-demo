@@ -13,7 +13,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <kie.version>7.31.0.Final</kie.version>
     <resteasy.version>3.6.1.SP2</resteasy.version>
-    <jackson.version>2.10.1</jackson.version>
+    <jackson.version>2.13.4.1</jackson.version>
     <commons.configuration>2.6</commons.configuration>
     <beanutils.version>1.9.4</beanutils.version>
   </properties>
